@@ -1,14 +1,19 @@
 """
-Data models for ArchiveTimeline.
-"""
+engine.settings
+---------------
+Dataclasses describing archive settings, scan results, snapshot results,
+and saved GUI/app settings for ArchiveSnapshot.
 
+No file I/O or scanning logic lives here — this module only defines the
+shapes that other engine modules pass around.
+"""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from constants import (
+from .app_info import (
     DEFAULT_EXCLUDED_DIRS,
     DEFAULT_EXCLUDED_FILES,
     DEFAULT_EXCLUDED_SUFFIXES,
@@ -32,6 +37,7 @@ class ArchiveSettings:
     include_manifest: bool = True
     include_summary: bool = True
     include_diff_report: bool = True
+    include_project_context_bundle: bool = True
 
     max_file_bytes: int = 2_000_000_000
     max_total_bytes: int = 100_000_000_000
@@ -51,7 +57,7 @@ class ArchiveSettings:
 @dataclass(slots=True)
 class FileRecord:
     """
-    Metadata for an included file.
+    Metadata for a single file included in a snapshot.
     """
 
     relative_path: str
@@ -64,7 +70,7 @@ class FileRecord:
 @dataclass(slots=True)
 class SkipRecord:
     """
-    Metadata for a skipped file.
+    Metadata for a file skipped during scanning.
     """
 
     relative_path: str
@@ -75,7 +81,7 @@ class SkipRecord:
 @dataclass(slots=True)
 class ScanResult:
     """
-    File scan result.
+    Result of scanning a source folder.
     """
 
     included_paths: list[Path]
@@ -87,7 +93,7 @@ class ScanResult:
 @dataclass(slots=True)
 class SnapshotResult:
     """
-    Completed snapshot result.
+    Result of building one complete dated snapshot.
     """
 
     export_dir: Path
@@ -98,6 +104,7 @@ class SnapshotResult:
     settings_path: Path
     zip_path: Path | None
     diff_path: Path | None
+    project_context_path: Path | None
     included_count: int
     skipped_count: int
     total_included_bytes: int
@@ -106,7 +113,7 @@ class SnapshotResult:
 @dataclass(slots=True)
 class TimelineSnapshot:
     """
-    Snapshot entry discovered in timeline.
+    One snapshot entry discovered on the timeline.
     """
 
     date_key: str
@@ -117,27 +124,28 @@ class TimelineSnapshot:
     included_count: int
     skipped_count: int
     included_bytes: int
+    project_context_attached: bool = False
+    project_context_file_count: int = 0
+    project_context_dir: Path | None = None
 
 
 @dataclass(slots=True)
 class AppSettings:
     """
-    GUI app settings.
+    Saved GUI application settings (last-used folder, options, daily mode).
     """
 
     selected_archive_folder: str = ""
     archive_name: str = ""
     archive_description: str = ""
-
     daily_mode_enabled: bool = False
     daily_run_hour: int = 2
     daily_run_minute: int = 0
-
     include_zip_snapshot: bool = True
     include_hashes: bool = True
     include_folder_tree: bool = True
     include_diff_report: bool = True
-
+    include_project_context_bundle: bool = True
     max_file_mb: float = 2000
     max_total_mb: float = 100000
 
