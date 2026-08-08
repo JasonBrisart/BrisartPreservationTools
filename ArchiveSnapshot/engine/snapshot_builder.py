@@ -3,7 +3,7 @@ engine.snapshot_builder
 ------------------------
 Orchestrates one full snapshot creation: scan the source folder, import
 any Project Context Helper bundle, write snapshot outputs, build a change
-report against the previous snapshot, and update the timeline index.
+report against the previous snapshot, and update the store index.
 
 This is the single entry point other code (CLI, GUI, daily automation)
 should call to create a snapshot.
@@ -14,7 +14,7 @@ import datetime
 from dataclasses import asdict
 from pathlib import Path
 
-from .app_info import DIFF_FILENAME, TIMELINE_LOG_FILENAME, ZIP_FILENAME
+from .app_info import DIFF_FILENAME, STORE_LOG_FILENAME, ZIP_FILENAME
 from .change_report import build_diff_markdown, compare_snapshot_dirs
 from .snapshot_writer import create_zip_snapshot, write_snapshot_outputs
 from .settings import ArchiveSettings, SnapshotResult
@@ -30,7 +30,6 @@ def timestamp_now() -> str:
     """
     Human-readable timestamp.
     """
-
     return datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
 
 
@@ -38,7 +37,6 @@ def date_key_now() -> str:
     """
     Local date key.
     """
-
     return datetime.datetime.now().astimezone().strftime("%Y-%m-%d")
 
 
@@ -46,22 +44,18 @@ def time_slug_now() -> str:
     """
     Local time slug.
     """
-
     return datetime.datetime.now().astimezone().strftime("%H%M%S")
 
 
-def append_timeline_log(source_root: Path, text: str) -> None:
+def append_store_log(source_root: Path, text: str) -> None:
     """
-    Append to the timeline log.
+    Append to the ArchiveSnapshot store log.
     """
+    from .app_info import STORE_DIRNAME
 
-    from .app_info import TIMELINE_DIRNAME
-
-    timeline_root = source_root / TIMELINE_DIRNAME
-    timeline_root.mkdir(parents=True, exist_ok=True)
-
-    log_path = timeline_root / TIMELINE_LOG_FILENAME
-
+    store_root = source_root / STORE_DIRNAME
+    store_root.mkdir(parents=True, exist_ok=True)
+    log_path = store_root / STORE_LOG_FILENAME
     with log_path.open("a", encoding="utf-8") as handle:
         handle.write(text)
         if not text.endswith("\n"):
@@ -72,13 +66,10 @@ def collect_generated_files(outputs: dict[str, Path | None]) -> list[Path]:
     """
     Return existing generated files from an output map.
     """
-
     files: list[Path] = []
-
     for path in outputs.values():
         if path is not None and Path(path).exists():
             files.append(Path(path))
-
     return files
 
 
@@ -86,13 +77,10 @@ def project_context_generated_files(project_context_path: Path | None) -> list[P
     """
     Return Project Context Helper files copied into the snapshot.
     """
-
     if project_context_path is None:
         return []
-
     if not project_context_path.exists() or not project_context_path.is_dir():
         return []
-
     return [path for path in sorted(project_context_path.iterdir()) if path.is_file()]
 
 
@@ -103,20 +91,15 @@ def create_snapshot(
     """
     Create one archive snapshot.
     """
-
     root = validate_root(source_root)
     settings = settings or ArchiveSettings()
-
     created = timestamp_now()
     date_key = date_key_now()
     time_slug = time_slug_now()
-
     export_dir = snapshot_folder_for(root, date_key, time_slug)
     export_dir.mkdir(parents=True, exist_ok=True)
-
     project_context_bundle = None
     project_context_path = None
-
     if settings.include_project_context_bundle:
         project_context_bundle = import_project_context_bundle(
             source_root=root,
@@ -124,11 +107,8 @@ def create_snapshot(
         )
         if project_context_bundle is not None:
             project_context_path = project_context_snapshot_dir(export_dir)
-
     project_context_data = asdict(project_context_bundle) if project_context_bundle else None
-
     scan = scan_folder(root, settings)
-
     outputs = write_snapshot_outputs(
         root=root,
         export_dir=export_dir,
@@ -137,10 +117,8 @@ def create_snapshot(
         created=created,
         project_context=project_context_data,
     )
-
     generated_files = collect_generated_files(outputs)
     generated_files.extend(project_context_generated_files(project_context_path))
-
     zip_path = None
     if settings.include_zip_snapshot:
         zip_path = export_dir / ZIP_FILENAME
@@ -150,10 +128,8 @@ def create_snapshot(
             scan=scan,
             generated_files=generated_files,
         )
-
     diff_path = None
     previous = latest_snapshot_before(root, export_dir)
-
     if previous is not None and settings.include_diff_report:
         try:
             diff = compare_snapshot_dirs(previous.snapshot_dir, export_dir)
@@ -164,14 +140,11 @@ def create_snapshot(
             )
         except Exception:
             diff_path = None
-
     write_timeline_index(root)
-
     project_context_log = "none"
     if project_context_bundle is not None:
         project_context_log = f"{project_context_bundle.file_count} files"
-
-    append_timeline_log(
+    append_store_log(
         root,
         (
             f"\n## Snapshot Created - {created}\n\n"
@@ -183,7 +156,6 @@ def create_snapshot(
             f"- Project Context Helper bundle: `{project_context_log}`\n"
         ),
     )
-
     return SnapshotResult(
         export_dir=export_dir,
         summary_path=outputs.get("summary"),

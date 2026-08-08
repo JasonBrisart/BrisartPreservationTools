@@ -102,19 +102,20 @@ Each dated snapshot may contain:
 - `CHANGES_SINCE_PREVIOUS.md` — diff against the previous snapshot, if one exists
 - `PROJECT_CONTEXT_HELPER/` — an attached Project Context Helper bundle, if one was provided
 
-### Timeline Layout
+### Store Layout
 
-Snapshots are stored in a date-based structure inside the archived folder:
+Snapshots are stored in a date-based structure inside the archived folder,
+under a store folder named after the program itself:
 
 ```text
 <Archived Folder>/
-└── ARCHIVE_TIMELINE/
+└── ARCHIVE_SNAPSHOT/
     ├── 2026/
     │   └── 07/
     │       ├── 2026-07-12_064500/
     │       └── 2026-07-13_020000/
-    ├── TIMELINE_INDEX.json
-    └── TIMELINE_LOG.md
+    ├── ARCHIVE_SNAPSHOT_INDEX.json
+    └── ARCHIVE_SNAPSHOT_LOG.md
 ```
 
 ### Project Context Helper Import

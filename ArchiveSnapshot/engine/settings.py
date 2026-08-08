@@ -17,7 +17,7 @@ from .app_info import (
     DEFAULT_EXCLUDED_DIRS,
     DEFAULT_EXCLUDED_FILES,
     DEFAULT_EXCLUDED_SUFFIXES,
-    TIMELINE_DIRNAME,
+    STORE_DIRNAME,
 )
 
 
@@ -26,11 +26,9 @@ class ArchiveSettings:
     """
     Settings used for one archive snapshot.
     """
-
     archive_name: str = ""
     archive_description: str = ""
-    timeline_dir_name: str = TIMELINE_DIRNAME
-
+    store_dir_name: str = STORE_DIRNAME
     include_hashes: bool = True
     include_zip_snapshot: bool = True
     include_folder_tree: bool = True
@@ -38,10 +36,8 @@ class ArchiveSettings:
     include_summary: bool = True
     include_diff_report: bool = True
     include_project_context_bundle: bool = True
-
     max_file_bytes: int = 2_000_000_000
     max_total_bytes: int = 100_000_000_000
-
     excluded_dirs: set[str] = field(default_factory=lambda: set(DEFAULT_EXCLUDED_DIRS))
     excluded_files: set[str] = field(default_factory=lambda: set(DEFAULT_EXCLUDED_FILES))
     excluded_suffixes: set[str] = field(default_factory=lambda: set(DEFAULT_EXCLUDED_SUFFIXES))
@@ -59,7 +55,6 @@ class FileRecord:
     """
     Metadata for a single file included in a snapshot.
     """
-
     relative_path: str
     size_bytes: int
     modified_time: str
@@ -72,7 +67,6 @@ class SkipRecord:
     """
     Metadata for a file skipped during scanning.
     """
-
     relative_path: str
     reason: str
     size_bytes: int | None = None
@@ -83,7 +77,6 @@ class ScanResult:
     """
     Result of scanning a source folder.
     """
-
     included_paths: list[Path]
     included_records: list[FileRecord]
     skipped_records: list[SkipRecord]
@@ -95,7 +88,6 @@ class SnapshotResult:
     """
     Result of building one complete dated snapshot.
     """
-
     export_dir: Path
     summary_path: Path | None
     manifest_path: Path | None
@@ -113,9 +105,8 @@ class SnapshotResult:
 @dataclass(slots=True)
 class TimelineSnapshot:
     """
-    One snapshot entry discovered on the timeline.
+    One snapshot entry discovered in the store.
     """
-
     date_key: str
     created: str
     snapshot_dir: Path
@@ -134,7 +125,6 @@ class AppSettings:
     """
     Saved GUI application settings (last-used folder, options, daily mode).
     """
-
     selected_archive_folder: str = ""
     archive_name: str = ""
     archive_description: str = ""

@@ -2,7 +2,10 @@
 engine.timeline_index
 ----------------------
 Discovers snapshots on disk (by reading their manifests), groups them by
-date, and maintains the TIMELINE_INDEX.json summary file.
+date, and maintains the ArchiveSnapshot store index file.
+
+The on-disk store folder and its index/log are named after the program
+(ARCHIVE_SNAPSHOT / ARCHIVE_SNAPSHOT_INDEX.json / ARCHIVE_SNAPSHOT_LOG.md).
 """
 from __future__ import annotations
 
@@ -13,21 +16,20 @@ from .app_info import (
     MANIFEST_FILENAME,
     PROJECT_CONTEXT_DEST_DIRNAME,
     PROJECT_CONTEXT_INDEX_FILENAME,
-    TIMELINE_DIRNAME,
-    TIMELINE_INDEX_FILENAME,
+    STORE_DIRNAME,
+    STORE_INDEX_FILENAME,
 )
 from .settings import TimelineSnapshot
 
 
-def timeline_root_for(
+def store_root_for(
     source_root: Path,
-    timeline_dir_name: str = TIMELINE_DIRNAME,
+    store_dir_name: str = STORE_DIRNAME,
 ) -> Path:
     """
-    Return the timeline root folder for a source folder.
+    Return the ArchiveSnapshot store folder for a source folder.
     """
-
-    return source_root / timeline_dir_name
+    return source_root / store_dir_name
 
 
 def snapshot_folder_for(source_root: Path, date_key: str, time_slug: str) -> Path:
@@ -37,22 +39,18 @@ def snapshot_folder_for(source_root: Path, date_key: str, time_slug: str) -> Pat
     date_key format: YYYY-MM-DD
     time_slug format: HHMMSS
     """
-
     year, month, _day = date_key.split("-")
-    return timeline_root_for(source_root) / year / month / f"{date_key}_{time_slug}"
+    return store_root_for(source_root) / year / month / f"{date_key}_{time_slug}"
 
 
 def load_project_context_meta(snapshot_dir: Path) -> tuple[bool, int, Path | None]:
     """
     Return Project Context Helper attachment state for a snapshot.
     """
-
     context_dir = snapshot_dir / PROJECT_CONTEXT_DEST_DIRNAME
     index_path = context_dir / PROJECT_CONTEXT_INDEX_FILENAME
-
     if not index_path.exists():
         return False, 0, None
-
     try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
         return True, int(data.get("file_count", 0)), context_dir
@@ -62,16 +60,12 @@ def load_project_context_meta(snapshot_dir: Path) -> tuple[bool, int, Path | Non
 
 def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
     """
-    Discover snapshots by reading manifests under the timeline root.
+    Discover snapshots by reading manifests under the store root.
     """
-
-    base = timeline_root_for(source_root)
-
+    base = store_root_for(source_root)
     if not base.exists():
         return []
-
     snapshots: list[TimelineSnapshot] = []
-
     for manifest_path in sorted(base.rglob(MANIFEST_FILENAME)):
         try:
             data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -80,9 +74,7 @@ def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
             archive_name = data.get("archive_name", "")
             folder_name = manifest_path.parent.name
             date_key = folder_name[:10]
-
             attached, file_count, context_dir = load_project_context_meta(manifest_path.parent)
-
             snapshots.append(
                 TimelineSnapshot(
                     date_key=date_key,
@@ -100,7 +92,6 @@ def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
             )
         except Exception:
             continue
-
     snapshots.sort(key=lambda item: str(item.snapshot_dir))
     return snapshots
 
@@ -109,12 +100,9 @@ def snapshots_by_date(source_root: Path) -> dict[str, list[TimelineSnapshot]]:
     """
     Group discovered snapshots by date.
     """
-
     grouped: dict[str, list[TimelineSnapshot]] = {}
-
     for snapshot in discover_snapshots(source_root):
         grouped.setdefault(snapshot.date_key, []).append(snapshot)
-
     return grouped
 
 
@@ -125,26 +113,20 @@ def latest_snapshot_before(
     """
     Return the previous snapshot before a given snapshot directory.
     """
-
     snapshots = discover_snapshots(source_root)
     snapshots = [item for item in snapshots if item.snapshot_dir < snapshot_dir]
-
     if not snapshots:
         return None
-
     return snapshots[-1]
 
 
 def write_timeline_index(source_root: Path) -> Path:
     """
-    Write the TIMELINE_INDEX.json summary file.
+    Write the ARCHIVE_SNAPSHOT_INDEX.json summary file.
     """
-
-    base = timeline_root_for(source_root)
+    base = store_root_for(source_root)
     base.mkdir(parents=True, exist_ok=True)
-
     snapshots = discover_snapshots(source_root)
-
     data = {
         "source_root": str(source_root),
         "snapshot_count": len(snapshots),
@@ -165,11 +147,9 @@ def write_timeline_index(source_root: Path) -> Path:
             for item in snapshots
         ],
     }
-
-    path = base / TIMELINE_INDEX_FILENAME
+    path = base / STORE_INDEX_FILENAME
     path.write_text(
         json.dumps(data, indent=2),
         encoding="utf-8",
     )
-
     return path
