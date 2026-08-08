@@ -3,17 +3,18 @@ engine.retention
 -----------------
 Snapshot retention for ArchiveSnapshot.
 
-The timeline grows without bound: every snapshot ever created stays on
-disk forever. This module adds an optional, explicit pruning pass so a
-source folder's ARCHIVE_TIMELINE can be kept to a chosen size without
+The store grows without bound: every snapshot ever created stays on disk
+forever. This module adds an optional, explicit pruning pass so a source
+folder's ARCHIVE_SNAPSHOT store can be kept to a chosen size without
 touching the live source files or the snapshot format itself.
 
 Design goals, matching the rest of the engine:
 - Pure engine logic: no Tkinter, no CLI, no third-party dependencies.
 - Safe by default: callers must opt in to deletion (apply_retention).
   A dry-run plan is always produced first so nothing is removed silently.
-- Only ever operates inside ARCHIVE_TIMELINE for the given source root.
-  It never deletes the source folder or anything outside the timeline.
+- Only ever operates inside the ARCHIVE_SNAPSHOT store for the given
+  source root. It never deletes the source folder or anything outside
+  the store.
 """
 from __future__ import annotations
 
@@ -22,8 +23,8 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .settings import TimelineSnapshot
-from .timeline_index import discover_snapshots, write_timeline_index
+from .settings import StoredSnapshot
+from .snapshot_index import discover_snapshots, write_store_index
 
 
 @dataclass(slots=True)
@@ -63,7 +64,7 @@ class RetentionPlan:
     applied: bool = False
 
 
-def parse_created(snapshot: TimelineSnapshot) -> datetime.datetime | None:
+def parse_created(snapshot: StoredSnapshot) -> datetime.datetime | None:
     """
     Best-effort parse of a snapshot's recorded creation time.
 
@@ -84,7 +85,7 @@ def parse_created(snapshot: TimelineSnapshot) -> datetime.datetime | None:
 
 
 def within_age(
-    snapshot: TimelineSnapshot,
+    snapshot: StoredSnapshot,
     keep_within_days: int,
     now: datetime.datetime,
 ) -> bool:
@@ -167,7 +168,7 @@ def apply_retention(source_root: str | Path, policy: RetentionPolicy) -> Retenti
     Evaluate the policy and actually remove the snapshots it selects.
 
     Each removed snapshot directory is deleted with shutil.rmtree, then
-    the timeline index is rewritten so it reflects only the surviving
+    the store index is rewritten so it reflects only the surviving
     snapshots. The snapshot storage format is unchanged.
     """
     plan = plan_retention(source_root, policy)
@@ -177,7 +178,7 @@ def apply_retention(source_root: str | Path, policy: RetentionPolicy) -> Retenti
         except OSError:
             continue
     if plan.removed:
-        write_timeline_index(Path(plan.source_root))
+        write_store_index(Path(plan.source_root))
     plan.applied = True
     return plan
 

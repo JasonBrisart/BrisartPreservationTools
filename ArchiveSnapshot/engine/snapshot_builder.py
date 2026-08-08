@@ -23,7 +23,7 @@ from .project_context_import import (
     project_context_snapshot_dir,
 )
 from .folder_scanner import scan_folder, validate_root
-from .timeline_index import latest_snapshot_before, snapshot_folder_for, write_timeline_index
+from .snapshot_index import latest_snapshot_before, snapshot_folder_for, write_store_index
 
 
 def timestamp_now() -> str:
@@ -140,7 +140,7 @@ def create_snapshot(
             )
         except Exception:
             diff_path = None
-    write_timeline_index(root)
+    write_store_index(root)
     project_context_log = "none"
     if project_context_bundle is not None:
         project_context_log = f"{project_context_bundle.file_count} files"

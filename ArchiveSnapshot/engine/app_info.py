@@ -10,7 +10,7 @@ and default scan exclusions.
 from __future__ import annotations
 
 APP_NAME = "ArchiveSnapshot"
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 AUTHOR = "Jason Brisart"
 REPOSITORY_NAME = "BrisartPreservationTools"
 

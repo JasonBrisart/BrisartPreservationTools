@@ -13,7 +13,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 from engine.change_report import build_diff_markdown, compare_snapshot_dirs
-from engine.timeline_index import discover_snapshots
+from engine.snapshot_index import discover_snapshots
 
 from .path_actions import build_folder_picker
 

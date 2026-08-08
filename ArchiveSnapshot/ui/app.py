@@ -22,7 +22,7 @@ from engine.app_info import (
     AUTHOR,
     REPOSITORY_NAME,
 )
-from engine.settings import TimelineSnapshot
+from engine.settings import StoredSnapshot
 
 from .about_tab import AboutTab
 from .app_settings import load_app_settings
@@ -67,7 +67,7 @@ class ArchiveSnapshotApp:
         self.daily_minute = tk.StringVar(value=str(loaded.daily_run_minute))
 
         self.status = tk.StringVar(value="Select an archive folder.")
-        self.selected_snapshot: TimelineSnapshot | None = None
+        self.selected_snapshot: StoredSnapshot | None = None
 
         today = datetime.datetime.now()
         self.current_year = today.year

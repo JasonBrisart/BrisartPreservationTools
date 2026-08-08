@@ -25,7 +25,7 @@ from engine.app_info import (
 )
 from engine.project_context_import import project_context_display_text
 from engine.snapshot_writer import human_bytes
-from engine.timeline_index import snapshots_by_date
+from engine.snapshot_index import snapshots_by_date
 
 from .path_actions import build_folder_picker, open_path
 

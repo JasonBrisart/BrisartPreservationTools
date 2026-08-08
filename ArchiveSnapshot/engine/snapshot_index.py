@@ -1,5 +1,5 @@
 """
-engine.timeline_index
+engine.snapshot_index
 ----------------------
 Discovers snapshots on disk (by reading their manifests), groups them by
 date, and maintains the ArchiveSnapshot store index file.
@@ -19,7 +19,7 @@ from .app_info import (
     STORE_DIRNAME,
     STORE_INDEX_FILENAME,
 )
-from .settings import TimelineSnapshot
+from .settings import StoredSnapshot
 
 
 def store_root_for(
@@ -58,14 +58,14 @@ def load_project_context_meta(snapshot_dir: Path) -> tuple[bool, int, Path | Non
         return True, 0, context_dir
 
 
-def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
+def discover_snapshots(source_root: Path) -> list[StoredSnapshot]:
     """
     Discover snapshots by reading manifests under the store root.
     """
     base = store_root_for(source_root)
     if not base.exists():
         return []
-    snapshots: list[TimelineSnapshot] = []
+    snapshots: list[StoredSnapshot] = []
     for manifest_path in sorted(base.rglob(MANIFEST_FILENAME)):
         try:
             data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -76,7 +76,7 @@ def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
             date_key = folder_name[:10]
             attached, file_count, context_dir = load_project_context_meta(manifest_path.parent)
             snapshots.append(
-                TimelineSnapshot(
+                StoredSnapshot(
                     date_key=date_key,
                     created=created,
                     snapshot_dir=manifest_path.parent,
@@ -96,11 +96,11 @@ def discover_snapshots(source_root: Path) -> list[TimelineSnapshot]:
     return snapshots
 
 
-def snapshots_by_date(source_root: Path) -> dict[str, list[TimelineSnapshot]]:
+def snapshots_by_date(source_root: Path) -> dict[str, list[StoredSnapshot]]:
     """
     Group discovered snapshots by date.
     """
-    grouped: dict[str, list[TimelineSnapshot]] = {}
+    grouped: dict[str, list[StoredSnapshot]] = {}
     for snapshot in discover_snapshots(source_root):
         grouped.setdefault(snapshot.date_key, []).append(snapshot)
     return grouped
@@ -109,7 +109,7 @@ def snapshots_by_date(source_root: Path) -> dict[str, list[TimelineSnapshot]]:
 def latest_snapshot_before(
     source_root: Path,
     snapshot_dir: Path,
-) -> TimelineSnapshot | None:
+) -> StoredSnapshot | None:
     """
     Return the previous snapshot before a given snapshot directory.
     """
@@ -120,7 +120,7 @@ def latest_snapshot_before(
     return snapshots[-1]
 
 
-def write_timeline_index(source_root: Path) -> Path:
+def write_store_index(source_root: Path) -> Path:
     """
     Write the ARCHIVE_SNAPSHOT_INDEX.json summary file.
     """

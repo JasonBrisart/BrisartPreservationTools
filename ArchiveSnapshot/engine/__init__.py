@@ -2,8 +2,8 @@
 engine
 ------
 Core, non-UI logic for ArchiveSnapshot: scanning, snapshot creation,
-timeline discovery, change reports, integrity verification, retention,
-and Project Context Helper import.
+snapshot discovery/indexing, change reports, integrity verification,
+retention, and Project Context Helper import.
 
 This package has no Tkinter or CLI dependency and can be reused by the
 GUI (ui/), the headless daily runner (automation/), or any future
@@ -14,9 +14,9 @@ Common entry points are re-exported here for convenience:
     from engine import create_snapshot, ArchiveSettings
 """
 from .app_info import APP_NAME, APP_VERSION, APP_TAGLINE, AUTHOR, REPOSITORY_NAME
-from .settings import ArchiveSettings, AppSettings, TimelineSnapshot, SnapshotResult
+from .settings import ArchiveSettings, AppSettings, StoredSnapshot, SnapshotResult
 from .snapshot_builder import create_snapshot
-from .timeline_index import discover_snapshots, snapshots_by_date, write_timeline_index
+from .snapshot_index import discover_snapshots, snapshots_by_date, write_store_index
 from .change_report import compare_snapshot_dirs, build_diff_markdown
 from .integrity_check import verify_snapshot_against_source, build_verify_report
 from .retention import (
@@ -41,12 +41,12 @@ __all__ = [
     "REPOSITORY_NAME",
     "ArchiveSettings",
     "AppSettings",
-    "TimelineSnapshot",
+    "StoredSnapshot",
     "SnapshotResult",
     "create_snapshot",
     "discover_snapshots",
     "snapshots_by_date",
-    "write_timeline_index",
+    "write_store_index",
     "compare_snapshot_dirs",
     "build_diff_markdown",
     "verify_snapshot_against_source",

@@ -17,7 +17,6 @@ from .app_info import (
     DEFAULT_EXCLUDED_DIRS,
     DEFAULT_EXCLUDED_FILES,
     DEFAULT_EXCLUDED_SUFFIXES,
-    STORE_DIRNAME,
 )
 
 
@@ -28,7 +27,6 @@ class ArchiveSettings:
     """
     archive_name: str = ""
     archive_description: str = ""
-    store_dir_name: str = STORE_DIRNAME
     include_hashes: bool = True
     include_zip_snapshot: bool = True
     include_folder_tree: bool = True
@@ -103,9 +101,9 @@ class SnapshotResult:
 
 
 @dataclass(slots=True)
-class TimelineSnapshot:
+class StoredSnapshot:
     """
-    One snapshot entry discovered in the store.
+    One snapshot entry discovered in the ArchiveSnapshot store.
     """
     date_key: str
     created: str
