@@ -1,7 +1,5 @@
 # ArchiveSnapshot
 
-**Version 2.0.0 — Architecture Rebuild**
-
 ArchiveSnapshot is a local-first, calendar-based archival snapshot tool for
 BrisartPreservationTools. It creates dated preservation snapshots of
 important digital folders so future users can understand:
@@ -24,57 +22,6 @@ A backup answers:
 ArchiveSnapshot answers:
 
 > What existed here on this date?
-
----
-
-## What Changed in v2.0.0
-
-This release is a full architectural rebuild, not a feature update. Every
-source file has been renamed and reorganized into a package layout with a
-single, clear responsibility per module. Nothing in this rebuild changes
-how existing snapshots are stored or read — only how the codebase itself
-is organized.
-
-**Every file was renamed.** There is intentionally no file in this release
-that shares a name with any file from a previous version, so there is no
-ambiguity about which version of a module you are looking at.
-
-**Two legacy files were retired entirely:**
-
-- The old standalone, single-file `ArchiveSnapshot.py` (v1.0.0) — a
-  flat, non-package script that predated the calendar/timeline design and
-  had become fully superseded by the current engine. It is not needed
-  and is not included in this release.
-- The old standalone `DailyArchiveBackup.py` script, which depended on
-  the file above — its functionality has been ported into
-  `automation/daily_snapshot_runner.py`, which now runs on the exact same
-  engine as the GUI and CLI. Daily jobs and manual snapshots now produce
-  identical results by construction, instead of two parallel
-  implementations that could quietly drift apart.
-
-**One entry point instead of several.** Previously there was `run.py`
-plus a separate `DailyArchiveBackup.py` script. Both are now unified into
-a single [`main.py`](main.py) with subcommands (`snapshot`, `daily`, or no
-arguments for the GUI). See [Usage](#usage) below.
-
-**What did *not* change (on purpose):**
-
-- The on-disk snapshot storage folder name (`ARCHIVE_TIMELINE/`) and the
-  files generated inside each dated snapshot (`ARCHIVE_SUMMARY.md`,
-  `ARCHIVE_MANIFEST.json`, `HASHES.sha256`, `FOLDER_TREE.txt`,
-  `ARCHIVE_SETTINGS.json`, `ARCHIVE_FILES.zip`,
-  `CHANGES_SINCE_PREVIOUS.md`) are all unchanged. Every snapshot you have
-  already created remains fully readable, comparable, and verifiable by
-  this version with no migration step.
-- The Project Context Helper inbox contract (`SNAPSHOT_ACTIVE/PROJECT_CONTEXT_HELPER/`)
-  and the filenames it expects (`PROJECT_CONTEXT.md`, `PROJECT_SUMMARY.txt`,
-  `PROJECT_CONTEXT_SETTINGS.json`, `PROJECT_MANIFEST.json`,
-  `PROJECT_SNAPSHOT.zip`) are unchanged — those are Project Context
-  Helper's own file formats, not ArchiveSnapshot's, so ArchiveSnapshot
-  does not rename them.
-- The GUI's saved settings will migrate forward automatically. If a
-  settings file from an earlier build is found and the current one
-  is not, it is read once so your folder and options are not lost.
 
 ---
 
@@ -119,29 +66,28 @@ identical on disk.
 
 ### File Reference
 
-| File | Replaces (v1.x) | Responsibility |
-| --- | --- | --- |
-| [main.py](main.py) | run.py, DailyArchiveBackup.py | Single CLI/GUI/daily entry point |
-| [engine/app_info.py](engine/app_info.py) | constants.py | App metadata, shared filenames |
-| [engine/settings.py](engine/settings.py) | models.py | Settings + result dataclasses |
-| [engine/folder_scanner.py](engine/folder_scanner.py) | scanner.py | Folder walk, exclusions, hashing |
-| [engine/snapshot_writer.py](engine/snapshot_writer.py) | exporters.py | Summary/manifest/hashes/ZIP output |
-| [engine/change_report.py](engine/change_report.py) | diff_engine.py | Snapshot-to-snapshot diff |
-| [engine/integrity_check.py](engine/integrity_check.py) | verifier.py | Snapshot-vs-source verification |
-| [engine/timeline_index.py](engine/timeline_index.py) | timeline.py | Snapshot discovery + indexing |
-| [engine/snapshot_builder.py](engine/snapshot_builder.py) | snapshot_engine.py | Orchestrates one snapshot |
-| [engine/project_context_import.py](engine/project_context_import.py) | project_context.py | Project Context Helper import |
-| [automation/daily_snapshot_runner.py](automation/daily_snapshot_runner.py) | DailyArchiveBackup.py | Headless daily snapshot jobs |
-| [ui/app.py](ui/app.py) | gui.py | Main window + tab coordination |
-| [ui/app_settings.py](ui/app_settings.py) | gui.py | GUI settings load/save |
-| [ui/path_actions.py](ui/path_actions.py) | gui.py | Shared folder picker + file/folder opening |
-| [ui/calendar_tab.py](ui/calendar_tab.py) | gui.py | Calendar tab |
-| [ui/snapshot_tab.py](ui/snapshot_tab.py) | gui.py | Create Snapshot tab |
-| [ui/comparison_tab.py](ui/comparison_tab.py) | gui.py | Compare tab |
-| [ui/verification_tab.py](ui/verification_tab.py) | gui.py | Verify tab |
-| [ui/settings_tab.py](ui/settings_tab.py) | gui.py | Settings tab |
-| [ui/about_tab.py](ui/about_tab.py) | gui.py | About tab |
-| — *(retired)* | ArchiveSnapshot.py (v1.0.0) | Superseded by engine/; removed |
+| File | Responsibility |
+| --- | --- |
+| [main.py](main.py) | Single CLI/GUI/daily entry point |
+| [engine/app_info.py](engine/app_info.py) | App metadata, shared filenames |
+| [engine/settings.py](engine/settings.py) | Settings + result dataclasses |
+| [engine/folder_scanner.py](engine/folder_scanner.py) | Folder walk, exclusions, hashing |
+| [engine/snapshot_writer.py](engine/snapshot_writer.py) | Summary/manifest/hashes/ZIP output |
+| [engine/change_report.py](engine/change_report.py) | Snapshot-to-snapshot diff |
+| [engine/integrity_check.py](engine/integrity_check.py) | Snapshot-vs-source verification |
+| [engine/timeline_index.py](engine/timeline_index.py) | Snapshot discovery + indexing |
+| [engine/snapshot_builder.py](engine/snapshot_builder.py) | Orchestrates one snapshot |
+| [engine/project_context_import.py](engine/project_context_import.py) | Project Context Helper import |
+| [automation/daily_snapshot_runner.py](automation/daily_snapshot_runner.py) | Headless daily snapshot jobs |
+| [ui/app.py](ui/app.py) | Main window + tab coordination |
+| [ui/app_settings.py](ui/app_settings.py) | GUI settings load/save |
+| [ui/path_actions.py](ui/path_actions.py) | Shared folder picker + file/folder opening |
+| [ui/calendar_tab.py](ui/calendar_tab.py) | Calendar tab |
+| [ui/snapshot_tab.py](ui/snapshot_tab.py) | Create Snapshot tab |
+| [ui/comparison_tab.py](ui/comparison_tab.py) | Compare tab |
+| [ui/verification_tab.py](ui/verification_tab.py) | Verify tab |
+| [ui/settings_tab.py](ui/settings_tab.py) | Settings tab |
+| [ui/about_tab.py](ui/about_tab.py) | About tab |
 
 ### Generated Outputs
 
