@@ -2,6 +2,35 @@
 
 All notable changes to **ArchiveSnapshot** are documented in this file.
 
+## [2.1.2] - 2026-08-08
+
+Change report honesty. The Compare feature now discloses when a diff was
+produced without hashes, so a change report never overstates its own
+confidence. Additive and fully backward compatible — the snapshot and
+manifest formats are unchanged, and existing snapshots remain readable,
+comparable, and verifiable with no migration step.
+
+### Added
+- `engine/change_report.py` now records whether both compared snapshots
+  carried SHA256 hashes:
+  - A new `manifest_has_hashes()` helper reads each manifest's
+    `include_hashes` setting, falling back to checking whether the
+    included files actually carry `sha256` values. An empty snapshot is
+    treated as hashed, since nothing could be silently missed.
+  - `compare_manifests()` adds a `hash_comparison` flag to its result
+    (True only when both snapshots were hashed).
+  - `build_diff_markdown()` prints a `Comparison method` line in every
+    report (`sha256 + size` or `size only`), and a WARNING banner when a
+    diff falls back to size-only detection — the case where an edit that
+    leaves a file's size unchanged can go undetected.
+
+### Notes
+- No behavior change for hashed snapshots (the default): reports gain the
+  new `Comparison method` line but the detected added/removed/modified
+  sets are identical to before.
+- All existing callers keep working — `compare_manifests()` only gains a
+  new dictionary key; nothing was removed or renamed.
+
 ## [2.1.1] - 2026-08-08
 
 Internal naming cleanup. No behavior, storage format, or public CLI/GUI
