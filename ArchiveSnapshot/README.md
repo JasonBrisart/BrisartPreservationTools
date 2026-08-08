@@ -98,9 +98,17 @@ ArchiveSnapshot/
 ├── automation/                      # headless daily automation, no GUI required
 │   ├── __init__.py
 │   └── daily_snapshot_runner.py       # config-driven daily snapshot jobs
-└── ui/                               # presentation layer
-    ├── __init__.py
-    └── calendar_app.py                 # Tkinter calendar GUI
+└── ui/                               # presentation layer — one module per tab
+    ├── __init__.py                    # public API re-exports (run_gui)
+    ├── app.py                         # main window + tab coordination
+    ├── app_settings.py                # GUI settings load/save
+    ├── path_actions.py                # shared folder picker + file/folder opening
+    ├── calendar_tab.py                # Calendar tab
+    ├── snapshot_tab.py                # Create Snapshot tab
+    ├── comparison_tab.py              # Compare tab
+    ├── verification_tab.py            # Verify tab
+    ├── settings_tab.py                # Settings tab
+    └── about_tab.py                   # About tab
 ```
 
 **Design rule:** `engine/` never imports from `ui/` or `automation/`.
@@ -112,24 +120,30 @@ identical on disk.
 ### File Reference
 
 | File | Replaces (v1.x) | Responsibility |
-|---|---|---|
-| [`main.py`](main.py) | `run.py`, `DailyArchiveBackup.py` | Single CLI/GUI/daily entry point |
-| [`engine/app_info.py`](engine/app_info.py) | `constants.py` | App metadata, shared filenames |
-| [`engine/settings.py`](engine/settings.py) | `models.py` | Settings + result dataclasses |
-| [`engine/folder_scanner.py`](engine/folder_scanner.py) | `scanner.py` | Folder walk, exclusions, hashing |
-| [`engine/snapshot_writer.py`](engine/snapshot_writer.py) | `exporters.py` | Summary/manifest/hashes/ZIP output |
-| [`engine/change_report.py`](engine/change_report.py) | `diff_engine.py` | Snapshot-to-snapshot diff |
-| [`engine/integrity_check.py`](engine/integrity_check.py) | `verifier.py` | Snapshot-vs-source verification |
-| [`engine/timeline_index.py`](engine/timeline_index.py) | `timeline.py` | Snapshot discovery + indexing |
-| [`engine/snapshot_builder.py`](engine/snapshot_builder.py) | `snapshot_engine.py` | Orchestrates one snapshot |
-| [`engine/project_context_import.py`](engine/project_context_import.py) | `project_context.py` | Project Context Helper import |
-| [`automation/daily_snapshot_runner.py`](automation/daily_snapshot_runner.py) | `DailyArchiveBackup.py` | Headless daily snapshot jobs |
-| [`ui/calendar_app.py`](ui/calendar_app.py) | `gui.py` | Tkinter calendar GUI |
-| — *(retired)* | `ArchiveSnapshot.py` (v1.0.0) | Superseded by `engine/`; removed |
+| --- | --- | --- |
+| [main.py](main.py) | run.py, DailyArchiveBackup.py | Single CLI/GUI/daily entry point |
+| [engine/app_info.py](engine/app_info.py) | constants.py | App metadata, shared filenames |
+| [engine/settings.py](engine/settings.py) | models.py | Settings + result dataclasses |
+| [engine/folder_scanner.py](engine/folder_scanner.py) | scanner.py | Folder walk, exclusions, hashing |
+| [engine/snapshot_writer.py](engine/snapshot_writer.py) | exporters.py | Summary/manifest/hashes/ZIP output |
+| [engine/change_report.py](engine/change_report.py) | diff_engine.py | Snapshot-to-snapshot diff |
+| [engine/integrity_check.py](engine/integrity_check.py) | verifier.py | Snapshot-vs-source verification |
+| [engine/timeline_index.py](engine/timeline_index.py) | timeline.py | Snapshot discovery + indexing |
+| [engine/snapshot_builder.py](engine/snapshot_builder.py) | snapshot_engine.py | Orchestrates one snapshot |
+| [engine/project_context_import.py](engine/project_context_import.py) | project_context.py | Project Context Helper import |
+| [automation/daily_snapshot_runner.py](automation/daily_snapshot_runner.py) | DailyArchiveBackup.py | Headless daily snapshot jobs |
+| [ui/app.py](ui/app.py) | gui.py | Main window + tab coordination |
+| [ui/app_settings.py](ui/app_settings.py) | gui.py | GUI settings load/save |
+| [ui/path_actions.py](ui/path_actions.py) | gui.py | Shared folder picker + file/folder opening |
+| [ui/calendar_tab.py](ui/calendar_tab.py) | gui.py | Calendar tab |
+| [ui/snapshot_tab.py](ui/snapshot_tab.py) | gui.py | Create Snapshot tab |
+| [ui/comparison_tab.py](ui/comparison_tab.py) | gui.py | Compare tab |
+| [ui/verification_tab.py](ui/verification_tab.py) | gui.py | Verify tab |
+| [ui/settings_tab.py](ui/settings_tab.py) | gui.py | Settings tab |
+| [ui/about_tab.py](ui/about_tab.py) | gui.py | About tab |
+| — *(retired)* | ArchiveSnapshot.py (v1.0.0) | Superseded by engine/; removed |
 
----
-
-## Generated Outputs
+### Generated Outputs
 
 Each dated snapshot may contain:
 
@@ -142,7 +156,7 @@ Each dated snapshot may contain:
 - `CHANGES_SINCE_PREVIOUS.md` — diff against the previous snapshot, if one exists
 - `PROJECT_CONTEXT_HELPER/` — an attached Project Context Helper bundle, if one was provided
 
-## Timeline Layout
+### Timeline Layout
 
 Snapshots are stored in a date-based structure inside the archived folder:
 
@@ -157,7 +171,7 @@ Snapshots are stored in a date-based structure inside the archived folder:
     └── TIMELINE_LOG.md
 ```
 
-## Project Context Helper Import
+### Project Context Helper Import
 
 ArchiveSnapshot does not generate Project Context Helper exports — it
 only imports an already-created bundle. To attach one to a snapshot:
@@ -165,16 +179,10 @@ only imports an already-created bundle. To attach one to a snapshot:
 1. Run Project Context Helper on the project you want documented.
 2. Copy `PROJECT_CONTEXT.md`, `PROJECT_SUMMARY.txt`,
    `PROJECT_CONTEXT_SETTINGS.json`, and `PROJECT_MANIFEST.json` into:
-
-   ```text
-   <Archive Folder>/SNAPSHOT_ACTIVE/PROJECT_CONTEXT_HELPER/
-   ```
-
+   `<Archive Folder>/SNAPSHOT_ACTIVE/PROJECT_CONTEXT_HELPER/`
 3. Create a snapshot as usual (GUI, CLI, or daily job). The bundle is
    copied into the dated snapshot folder and indexed in
    `PROJECT_CONTEXT_INDEX.json`.
-
----
 
 ## Usage
 
@@ -220,8 +228,6 @@ python main.py daily --watch --config DAILY_SNAPSHOT_CONFIG.json
 
 Add `--force` to `--once` to re-run jobs that already ran today.
 
----
-
 ## Verification & Comparison
 
 - **Compare** — `engine.change_report.compare_snapshot_dirs` diffs two
@@ -231,8 +237,6 @@ Add `--force` to `--once` to re-run jobs that already ran today.
   re-hashes the live source folder and checks it against a snapshot's
   recorded hashes and sizes, flagging anything changed or missing since
   the snapshot was taken. Available from the GUI's Verify tab.
-
----
 
 Created by Jason Brisart
 Part of BrisartPreservationTools
